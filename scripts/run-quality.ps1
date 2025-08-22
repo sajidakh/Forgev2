@@ -27,7 +27,9 @@ try {
   & (Join-Path $venv "ruff.exe") check $api; Assert-LastExit "ruff"
   & (Join-Path $venv "black.exe") --check $api; Assert-LastExit "black --check"
   & (Join-Path $venv "mypy.exe") --config-file (Join-Path $api "mypy.ini") $api; Assert-LastExit "mypy"
-  & (Join-Path $venv "bandit.exe") -q -r $api -x (Join-Path $api ".venv"),(Join-Path $api "tests"),(Join-Path $api "__pycache__")
+    Push-Location $api
+  & (Join-Path $venv "bandit.exe") -q -r . -x ".venv,tests,__pycache__"
+  Pop-Location
   if (Test-Path (Join-Path $api "tests")) {
     & (Join-Path $venv "pytest.exe") -q (Join-Path $api "tests"); Assert-LastExit "pytest"
   }
@@ -38,4 +40,5 @@ try {
   Write-Host "`nQUALITY: ALL GREEN" -ForegroundColor Green
   exit 0
 } finally { Pop-RepoRoot }
+
 
