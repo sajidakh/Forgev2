@@ -22,7 +22,7 @@ export default function SystemHealth() {
       });
       const data = await res.json();
       setApiMsg(`API: ${data.status} (${data.service})`);
-    } catch (e) {
+    } catch {
       setApiMsg("API unreachable");
     }
   }
@@ -54,7 +54,7 @@ export default function SystemHealth() {
 
   function uiEnv() {
     // Minimal config display; extend later as needed
-    const apiUrl = (import.meta as any).env?.VITE_API_URL ?? "http://127.0.0.1:8000";
+    const apiUrl = import.meta.env?.VITE_API_URL ?? "http://127.0.0.1:8000";
     const inElectron = !!window.forge?.hasElectron;
     setCfgMsg(`VITE_API_URL=${apiUrl} | electron=${inElectron}`);
   }

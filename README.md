@@ -35,3 +35,8 @@ cd electron && npm install && cd ..
 
 ## License
 Replace placeholder with your choice (MIT/Apache-2.0) before first release.
+
+## Docs
+- [Hardening](docs/HARDENING.md)
+- [Logging](docs/LOGGING.md)
+
