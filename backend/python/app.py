@@ -14,6 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.middleware("http")
 async def add_request_id(request: Request, call_next):
     request_id = request.headers.get("x-request-id", str(uuid4()))
@@ -23,6 +24,7 @@ async def add_request_id(request: Request, call_next):
     response.headers["x-request-id"] = request_id
     response.headers["x-duration-ms"] = str(duration_ms)
     return response
+
 
 @app.get("/health")
 def health():
