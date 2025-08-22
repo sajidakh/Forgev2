@@ -1,0 +1,4 @@
+exclude_dirs:
+  - backend/python/.venv
+  - backend/python/tests
+  - backend/python/__pycache__
