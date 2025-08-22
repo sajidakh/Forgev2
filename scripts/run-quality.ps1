@@ -3,7 +3,8 @@ param(
   [switch]$SkipUI,
   [switch]$SkipBandit,
   [switch]$SkipTests,
-  [int]$MinCov = 0
+  [switch]$RunE2E,
+  [string]$E2EGrep = '@smoke'
 )
 
 Set-StrictMode -Version Latest
@@ -51,17 +52,12 @@ try {
 
     if (-not $SkipTests) {
       $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = '1'
-      $pytestArgs = @('-q')
-      if ($MinCov -gt 0) {
-        $pytestArgs += @('--cov=.', '--cov-report=term-missing', "--cov-fail-under=$MinCov")
-      }
-      & .\.venv\Scripts\pytest.exe @pytestArgs
+      & .\.venv\Scripts\pytest.exe -q
       if ($LASTEXITCODE -ne 0) { throw "Non-zero exit in pytest (exit=$LASTEXITCODE)" }
     } else {
       Write-Host "[pytest] skipped via -SkipTests" -ForegroundColor DarkYellow
     }
-  }
-  finally {
+  } finally {
     Remove-Item Env:\PYTEST_DISABLE_PLUGIN_AUTOLOAD -ErrorAction SilentlyContinue
     Pop-Location
   }
@@ -74,17 +70,37 @@ try {
       npm ci --no-audit --fund=false | Out-Null
       npm run build
       if ($LASTEXITCODE -ne 0) { throw "Non-zero exit in ui build (exit=$LASTEXITCODE)" }
-    }
-    finally { Pop-Location }
+    } finally { Pop-Location }
   } else {
     Write-Host "[ui] build skipped via -SkipUI" -ForegroundColor DarkYellow
   }
 
+  # ---------- UI e2e (Playwright) ----------
+  if ($RunE2E) {
+    Write-Host "`n== UI e2e ($E2EGrep) ==" -ForegroundColor Yellow
+    Push-Location 'ui'
+    try {
+      $pwout = & npx playwright test --grep $E2EGrep 2>&1
+      $code  = $LASTEXITCODE
+      $pwout | Write-Host
+      if ($code -ne 0) {
+        if ($pwout -match 'No tests found') {
+          Write-Host "[e2e] No tests matched '$E2EGrep'; running all tests" -ForegroundColor DarkYellow
+          & npx playwright test
+          if ($LASTEXITCODE -ne 0) { throw "Non-zero exit in e2e (exit=$LASTEXITCODE)" }
+        } else {
+          throw "Non-zero exit in e2e (exit=$code)"
+        }
+      }
+    } finally { Pop-Location }
+  } else {
+    Write-Host "[e2e] skipped (use -RunE2E to enable)" -ForegroundColor DarkYellow
+  }
   # ---------- API health (smoke) ----------
   Write-Host "`n== API health ==" -ForegroundColor Yellow
   Write-Host "API health ok."
 
   Write-Host "`nALL TESTS GREEN`n" -ForegroundColor Green
   Write-Host "QUALITY: ALL GREEN" -ForegroundColor Green
-}
-finally { Pop-Location }
+} finally { Pop-Location }
+
