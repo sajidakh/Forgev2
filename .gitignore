@@ -1,0 +1,25 @@
+# Node
+node_modules/
+dist/
+.build/
+electron/dist/
+electron/out/
+*.log
+
+# Python
+backend/python/.venv/
+__pycache__/
+*.pyc
+.python-version
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Misc
+tmp/
+.secrets/
+.env
+.env.*
