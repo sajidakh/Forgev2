@@ -48,3 +48,15 @@ Run from repo root:
 .\scripts\run-quality.ps1
 
 
+
+## Testing overview
+
+This project has **two complementary test layers**:
+
+### 1) Fast backend/API tests (pytest)
+- Location: `backend/python/tests`
+- Purpose: Exercise the API directly (no UI); fast feedback & contract checks.
+- How we run locally (PowerShell):
+  ```powershell
+  # from repo root
+  .\scripts\run-quality.ps1        # runs pytest as part of the gate
