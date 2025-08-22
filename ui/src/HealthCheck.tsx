@@ -1,20 +1,20 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 export default function HealthCheck() {
-  const [msg, setMsg] = useState<string>('Click to ping API');
+  const [msg, setMsg] = useState("Click to ping API");
 
-  const ping = async () => {
+  async function ping() {
     try {
-      const res = await fetch('http://127.0.0.1:8000/health');
+      const res = await fetch("http://127.0.0.1:8000/health");
       const data = await res.json();
-      setMsg(\API: \ (\)\);
-    } catch (e) {
-      setMsg('API unreachable');
+      setMsg(`API: ${data.status} (${data.service})`);
+    } catch {
+      setMsg("API unreachable");
     }
-  };
+  }
 
   return (
-    <div style={{ padding: 16 }}>
+    <div>
       <button onClick={ping}>Ping API</button>
       <div style={{ marginTop: 8 }}>{msg}</div>
     </div>

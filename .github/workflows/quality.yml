@@ -1,0 +1,38 @@
+name: Quality
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  quality:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Python deps
+        shell: pwsh
+        run: |
+          cd backend/python
+          python -m venv .venv
+          .\.venv\Scripts\python -m pip install --upgrade pip
+          .\.venv\Scripts\pip install -r requirements.txt
+          .\.venv\Scripts\pip install -r requirements-dev.txt
+      - name: Node deps (UI)
+        shell: pwsh
+        run: |
+          cd ui
+          npm ci --no-audit --no-fund
+      - name: Quality gate
+        shell: pwsh
+        run: |
+          .\scripts\run-quality.ps1
