@@ -40,3 +40,9 @@ Replace placeholder with your choice (MIT/Apache-2.0) before first release.
 - [Hardening](docs/HARDENING.md)
 - [Logging](docs/LOGGING.md)
 
+## Local quality gate (PowerShell)
+
+Run from repo root:
+
+```powershell
+.\scripts\run-quality.ps1
