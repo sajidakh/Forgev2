@@ -1,27 +1,42 @@
-. $(Join-Path \ '_global.ps1')
+Set-StrictMode -Version Latest
 
-Write-Host "
-[start] Booting Forge dev stack..." -ForegroundColor Cyan
-# 1) API
-Start-Process -WindowStyle Minimized -FilePath powershell -ArgumentList @(
-  '-NoProfile','-ExecutionPolicy','Bypass','-Command',
-  'Set-Location ""backend/python""; .\.venv\Scripts\uvicorn.exe app:app --host 127.0.0.1 --port 8000 --reload'
-)
+# Dot-source global (optional)
+$globalPath = Join-Path $PSScriptRoot '_global.ps1'
+if (Test-Path $globalPath) { . $globalPath }
 
-# Wait briefly for API
+# Resolve paths relative to repo
+$repoRoot     = Resolve-Path (Join-Path $PSScriptRoot '..')
+$apiPath      = Join-Path $repoRoot 'backend\python'
+$uiPath       = Join-Path $repoRoot 'ui'
+$electronPath = Join-Path $repoRoot 'electron'
+
+Write-Host "`n[start] Booting Forge dev stack..." -ForegroundColor Cyan
+
+# Start API (uvicorn in venv)
+$uvicorn = Join-Path $apiPath '.venv\Scripts\uvicorn.exe'
+if (-not (Test-Path $uvicorn)) {
+  Write-Warning "Uvicorn not found at $uvicorn. Did you create the venv and install requirements?"
+} else {
+  Start-Process -WindowStyle Minimized -FilePath 'pwsh' -ArgumentList @(
+    '-NoProfile','-ExecutionPolicy','Bypass','-Command',
+    "Set-Location '$apiPath'; & '$uvicorn' app:app --host 127.0.0.1 --port 8000 --reload"
+  )
+}
+
 Start-Sleep -Seconds 2
 
-# 2) UI (Vite)
-Start-Process -WindowStyle Minimized -FilePath powershell -ArgumentList @(
+# Start UI (Vite)
+Start-Process -WindowStyle Minimized -FilePath 'pwsh' -ArgumentList @(
   '-NoProfile','-ExecutionPolicy','Bypass','-Command',
-  'Set-Location ""ui""; npm run dev'
+  "Set-Location '$uiPath'; npm run dev"
 )
 
-# 3) Electron (wait a tad for Vite to come up)
 Start-Sleep -Seconds 3
-Start-Process -WindowStyle Normal -FilePath powershell -ArgumentList @(
+
+# Start Electron
+Start-Process -WindowStyle Normal -FilePath 'pwsh' -ArgumentList @(
   '-NoProfile','-ExecutionPolicy','Bypass','-Command',
-  'Set-Location ""electron""; npm start'
+  "Set-Location '$electronPath'; npm start"
 )
 
-Write-Host "[start] API on http://127.0.0.1:8000 | UI on http://127.0.0.1:5173 | Electron wrapping UI" -ForegroundColor Green
+Write-Host "[start] API http://127.0.0.1:8000 | UI http://127.0.0.1:5173 | Electron wrapping UI" -ForegroundColor Green
