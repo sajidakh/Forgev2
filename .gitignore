@@ -23,3 +23,5 @@ tmp/
 .secrets/
 .env
 .env.*
+ui/playwright-report/
+ui/test-results/
