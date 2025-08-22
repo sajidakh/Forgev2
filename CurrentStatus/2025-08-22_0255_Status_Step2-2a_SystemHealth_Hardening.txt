@@ -1,0 +1,33 @@
+CURRENT STATUS — 2025-08-22_0255
+Repo: Forgev2 (local C:\GitRepos\Forge_v2, origin git@github.com:sajidakh/Forgev2.git)
+
+Steps accomplished this session:
+0) Preflight & hygiene: .gitattributes/.gitignore/LICENSE/README; scripts folder; risk register.
+1) Minimal skeleton: FastAPI (/health, request-id), Vite+React UI, Electron shell; start-dev & smoke scripts.
+1a) Quality gates: ESLint+Prettier (UI); Ruff/Black/Mypy/Bandit (API); run-quality gate; GitHub Actions workflow;
+    pre-commit hook (fix: install to actual hooks path); added check-env (Node 18/20/22, Python 3.11) + check-locks.
+2) System Health feature: 4 buttons (API /health, API /version, Electron IPC echo, UI env).
+    API: structured JSON logs, x-request-id propagation, log rotation; added /version.
+2a) Hardening: Electron security (contextIsolation, webSecurity, perms denied); dev sandbox=OFF for working preload;
+    wait-for-Vite + host pin (127.0.0.1:5173); Electron retry loader; start-electron-only (self-healing) launcher;
+    fixed Bandit B110 (no bare try/except pass); fixed ESLint issues; node_modules rebuild; Prettier/Black clean.
+
+Verified manually:
+- Browser @ http://127.0.0.1:5173 shows Forge UI + System Health.
+- Electron window shows: API ok, Version 0.1.0-step2, IPC echo: hello-from-ui, VITE_API_URL=..., electron=true.
+
+Open items / Next step:
+- 2b) Add Playwright UI smokes against vite preview (health/version/env) and wire into CI.
+- Later: re-enable Electron sandbox for prod packaging with proper preload strategy + strict CSP.
+- Choose final license; optional CODEOWNERS expansion; package signing/SBOM come at Step 6.
+
+Lessons learned:
+- Don’t paste partial here-strings — use full blocks or write line-by-line (we did line arrays).
+- Always cd to repo root at top of every script and hard-fail on non-zero (Assert-LastExit).
+- Wait for services (Vite/API) before launching Electron; prefer 127.0.0.1; add retry loaders.
+- Avoid ‘except … pass’; log structured warnings; logging must never block the request.
+- Corrupt node_modules will white-screen the UI — kill stale processes, nuke node_modules, npm ci.
+- Hooks must go to the real hooks path (core.hooksPath) or they won’t enforce the gate.
+
+Where to resume tomorrow:
+- Start with scripts\\run-ui-smoke.ps1 and wire it into CI (quality.yml). Then proceed to Recorder + Smart Assert (Step 3).

@@ -1,0 +1,38 @@
+ENGINEERING DIRECTIVES — as of 2025-08-22_0255
+
+Commit & Branching:
+- Green-or-no-commit: run scripts\\run-quality.ps1 locally; commit only on green.
+- Scaffolding phase: commit to main; Business logic: develop on dev, then merge to main on green.
+- Conventional commits (feat|fix|chore|docs...).
+
+Documentation & Comments:
+- Every new file/function/class gets comments or a folder README explaining purpose/rationale/how-to-run.
+- Keep Docs-as-code: update READMEs, HARDENING.md, LOGGING.md, Prime Directives.
+- New BAU: CurrentStatus/* timestamped summaries after each work session (for ChatGPT continuity).
+
+PowerShell rules:
+- Each script begins by cd’ing to repo root; use Assert-LastExit and fail fast.
+- Provide self-healing dev scripts: start-dev waits for Vite; start-electron-only spins up UI/API if needed.
+
+Quality gates:
+- UI: ESLint + Prettier check; build must succeed.
+- API: Ruff, Black --check, Mypy, Bandit (no bare pass).
+- Env check: Node 18/20/22 allowed; Python 3.11.x; Lockfile presence checks.
+- Pre-commit hook must run the quality gate; install to actual hooks path.
+- CI mirrors local gate on main/dev; add Playwright smoke soon.
+
+Security & Privacy:
+- Electron: contextIsolation=true, nodeIntegration=false, webSecurity=true; dev sandbox=false to enable preload;
+  deny permission prompts; add strict CSP when packaging.
+- API: structured JSON logging; never log PII/secrets; log rotation enabled; x-request-id propagated.
+- Secrets: use .env (gitignored) / OS keychain/Vault; never commit secrets.
+
+Determinism & No-Flake:
+- Prefer deterministic fixtures (time freeze, RNG seed) for tests; avoid arbitrary sleeps.
+- Use event-driven waits and verification loops; quarantine flaky checks; mask dynamic fields in snapshots.
+
+Runtime & Startup:
+- Bind Vite to 127.0.0.1:5173; Electron waits/retries; pass FORGE_UI_URL; use start-electron-only for debug.
+
+Packaging roadmap (later):
+- Signed build, SBOM, dependency attestation, production CSP, sandbox strategy re-evaluated.
