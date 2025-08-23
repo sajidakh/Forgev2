@@ -1,1 +1,23 @@
-<<<PASTE ENTIRE Status_Steps3-12a_2025-08-23_1453.txt CONTENTS HERE>>>
+# STATUS — Steps 3–12a (desktop-first hardening)
+Generated: 2025-08-23 18:50:41 -04:00
+
+What changed since 2025-08-22_0255
+- Playwright installed with html + line reporters; HTML saved at ui/playwright-report/.
+- WebServer uses direct Node path for vite preview (avoids Windows npm/npx wrapper issues).
+- Gate script supports -RunE2E, -E2EGrep '@smoke'|'@ui', and -OpenReport; e2e remains opt-in by default.
+- README updated with testing overview and instructions to open the HTML report.
+- CI Bandit -> pytest -> UI build is stable; report upload wired when e2e is enabled.
+
+What remains before Step 3 (RecordRun / SmartAssert / Mock)
+1) Ensure the four main flows advertise stable data-testid identifiers.
+2) Confirm RequestId propagation/echo across endpoints touched by Step 3.
+3) Verify lockfiles locally (CI already enforces); extend scenario docs after Step 3 lands.
+
+Flake watch / risks
+- Windows npm wrapper issues mitigated via direct Node usage in Playwright config.
+- No tests quarantined at present.
+
+Reproduce locally
+  .\scripts\run-quality.ps1
+  .\scripts\run-quality.ps1 -RunE2E
+  .\scripts\run-quality.ps1 -RunE2E -E2EGrep '@ui' -OpenReport

@@ -1,1 +1,57 @@
-<<<PASTE ENTIRE Unified_Engineering_Directives_FORGE_UNIFIED.txt CONTENTS HERE>>>
+# FORGE — Unified Engineering Directives (desktop-first)
+Generated: 2025-08-23 18:50:41 -04:00
+
+Purpose
+- One source of truth for how we design, test, secure and ship a robust, deterministic, flake-free desktop product.
+- Desktop (Electron + Vite/React) is first-class. SaaS hooks are optional adapters that must never break local UX.
+
+Architecture (desktop-first)
+- Electron main (Node) + renderer (Vite/React/TS).
+- Local FastAPI (Python) utilities/contracts where appropriate.
+- IPC between renderer and Electron; renderer talks to local HTTP/WS services.
+- Everything scriptable (PowerShell-first).
+
+Determinism
+- Lockfiles committed and enforced: ui/package-lock.json and backend/python/requirements*.txt.
+- CI fails on drift; reproducible builds; pinned toolchain versions captured.
+
+Security & Privacy
+- No secrets in repo; .env.local for dev overrides only.
+- Logs are structured JSON; personally sensitive content redacted by default.
+- CI runs Bandit for Python; broad “swallow errors” patterns are prohibited. Use logged, non-blocking handlers where safe.
+
+Observability
+- RequestId propagation on all app/API hops; echo back in responses.
+- Lightweight counters (perf) and structured logs. Test artifacts attached in CI when tests run.
+
+Testing layers
+- Unit (fast/hermetic) + API (pytest contracts; echo RequestId) + UI (Playwright).
+- Playwright: stable data-testid selectors, tags @smoke and @ui, html+line reporters.
+- HTML report lives in ui/playwright-report/; docs explain how to open locally.
+
+CI Quality Gate (desktop-first)
+- Bandit -> pytest -> UI build (e2e is opt-in for speed).
+- Artifacts uploaded when e2e is enabled. Gate must be green for PRs to merge.
+
+Selectors & No-flake policy
+- Main user flows expose stable data-testid identifiers (feature-scope-action).
+- No brittle selectors; no hidden sleeps; no broad try/except that hides errors.
+
+Docs-as-code
+- Minimum set: Getting Started, gate usage, how to open HTML report, scenario maps.
+- Significant state changes land under CurrentStatus/ as timestamped text files.
+
+Branching & Reviews
+- Trunk-based, short-lived branches, PR required, checks must pass.
+
+Packaging & SBOM (later step)
+- Reproducible installers; SBOM produced; plan code-signing under Step 6a.
+
+SaaS Hooks (optional)
+- Adapters only. Cloud failures must not break desktop UX. Data minimization + explicit consent.
+
+Performance budgets
+- UI smoke ≤ 30s on a dev laptop; simple local HTTP endpoints p50 < 50ms.
+
+Non-negotiables
+- No hidden sleeps; no brittle selectors; no broad “swallow errors” by default.
