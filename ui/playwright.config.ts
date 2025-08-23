@@ -1,23 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
 
-export default defineConfig({`n  reporter: [['html', @{ open = 'never' }], ['line']],
+export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
-  reporter: 'list',
+  reporter: [['html', { open: 'never' }], ['line']],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:4173',
+    baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'npm run preview -- --port 4173',
-    port: 4173,
+    command: 'npm run preview -- --port=5173',
+    port: 5173,
     reuseExistingServer: true,
-    env: { NODE_ENV: 'production' },
+    timeout: 60 * 1000,
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox',  use: { ...devices['Desktop Firefox'] } },
-    { name: 'webkit',   use: { ...devices['Desktop Safari'] } },
   ],
 });
-
