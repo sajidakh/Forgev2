@@ -60,3 +60,16 @@ This project has **two complementary test layers**:
   ```powershell
   # from repo root
   .\scripts\run-quality.ps1        # runs pytest as part of the gate
+
+### CI artifacts (Playwright report)
+
+- Our GitHub Actions workflow uploads the **Playwright HTML report** when e2e runs.
+- After a CI run, open the workflow run and download the artifact named **playwright-report**.  
+  Unzip and open `index.html` in a browser.
+
+**View the report locally** (after a local e2e run):
+
+```powershell
+Push-Location ui
+npx playwright show-report --port 0 --host 127.0.0.1
+Pop-Location
