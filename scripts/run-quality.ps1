@@ -4,59 +4,46 @@ param(
   [switch]$SkipBandit,
   [switch]$SkipTests,
   [switch]$RunE2E,
-  [string]$E2EGrep = '@smoke'
+  [string]$E2EGrep='@smoke',
+  [switch]$OpenReport
 )
-
 Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = "Stop"
 
-# --- Repo root (works when run as script or interactively) ---
-$repoRoot = $null
-if ($PSScriptRoot) {
-  $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
-} else {
-  try {
-    $gitRoot = (git -C $PWD rev-parse --show-toplevel 2>$null)
-    $repoRoot = if ($gitRoot) { $gitRoot } else { $PWD }
-  } catch { $repoRoot = $PWD }
-}
-
+# repo root (script or interactive)
+$repoRoot = if ($PSScriptRoot) { Resolve-Path (Join-Path $PSScriptRoot "..") } else { try { (git -C $PWD rev-parse --show-toplevel 2>$null) } catch { $PWD } }
 Push-Location $repoRoot
 try {
   Write-Host "[cd] run-quality -> $(Get-Location)"
 
   Write-Host "== Env Check ==" -ForegroundColor Yellow
-  node -v | ForEach-Object { Write-Host "Node OK: $_" }
-  (python --version) 2>&1 | ForEach-Object { Write-Host "Python OK: $_" }
+  node -v | % { Write-Host "Node OK: $_" }
+  (python --version) 2>&1 | % { Write-Host "Python OK: $_" }
 
   Write-Host "== Lockfiles ==" -ForegroundColor Yellow
-  if (-not (Test-Path 'ui\package-lock.json')) { throw 'ui\package-lock.json missing' }
+  if (-not (Test-Path "ui\package-lock.json")) { throw "ui\package-lock.json missing" }
   Write-Host "Lockfiles present"
 
   # ---------- Security (Bandit) + Tests (pytest) ----------
-  Push-Location 'backend\python'
+  Push-Location "backend\python"
   try {
-    if (-not (Test-Path '.\.venv\Scripts\activate')) { python -m venv .venv }
+    if (-not (Test-Path ".\.venv\Scripts\activate")) { python -m venv .venv }
     .\.venv\Scripts\pip.exe install -q -r requirements-dev.txt | Out-Null
 
     if (-not $SkipBandit) {
-      $banditCfg = Join-Path $repoRoot '.bandit.yml'
-      $banditArgs = @('-q','-r','.')
-      if (Test-Path $banditCfg) { $banditArgs += @('-c', $banditCfg) }
-      $banditArgs += @('-x', '.\.venv,.\tests,.\__pycache__')
-      & .\.venv\Scripts\bandit.exe @banditArgs
+      $banditCfg = Join-Path $repoRoot ".bandit.yml"
+      $args = @("-q","-r",".")
+      if (Test-Path $banditCfg) { $args += @("-c",$banditCfg) }
+      $args += @("-x",".\.venv,.\tests,.\__pycache__")
+      & .\.venv\Scripts\bandit.exe @args
       if ($LASTEXITCODE -ne 0) { throw "Non-zero exit in bandit (exit=$LASTEXITCODE)" }
-    } else {
-      Write-Host "[bandit] skipped via -SkipBandit" -ForegroundColor DarkYellow
-    }
+    } else { Write-Host "[bandit] skipped" -ForegroundColor DarkYellow }
 
     if (-not $SkipTests) {
-      $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = '1'
+      $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
       & .\.venv\Scripts\pytest.exe -q
       if ($LASTEXITCODE -ne 0) { throw "Non-zero exit in pytest (exit=$LASTEXITCODE)" }
-    } else {
-      Write-Host "[pytest] skipped via -SkipTests" -ForegroundColor DarkYellow
-    }
+    } else { Write-Host "[pytest] skipped" -ForegroundColor DarkYellow }
   } finally {
     Remove-Item Env:\PYTEST_DISABLE_PLUGIN_AUTOLOAD -ErrorAction SilentlyContinue
     Pop-Location
@@ -65,42 +52,32 @@ try {
   # ---------- UI build ----------
   if (-not $SkipUI) {
     Write-Host "`n== UI build ==" -ForegroundColor Yellow
-    Push-Location 'ui'
+    Push-Location "ui"
     try {
       npm ci --no-audit --fund=false | Out-Null
       npm run build
       if ($LASTEXITCODE -ne 0) { throw "Non-zero exit in ui build (exit=$LASTEXITCODE)" }
     } finally { Pop-Location }
-  } else {
-    Write-Host "[ui] build skipped via -SkipUI" -ForegroundColor DarkYellow
-  }
+  } else { Write-Host "[ui] build skipped" -ForegroundColor DarkYellow }
 
-  # ---------- UI e2e (Playwright) ----------
+  # ---------- UI e2e ----------
   if ($RunE2E) {
     Write-Host "`n== UI e2e ($E2EGrep) ==" -ForegroundColor Yellow
-    Push-Location 'ui'
+    Push-Location "ui"
     try {
-      $pwout = & npx playwright test --grep $E2EGrep 2>&1
-      $code  = $LASTEXITCODE
-      $pwout | Write-Host
-      if ($code -ne 0) {
-        if ($pwout -match 'No tests found') {
-          Write-Host "[e2e] No tests matched '$E2EGrep'; running all tests" -ForegroundColor DarkYellow
-          & npx playwright test
-          if ($LASTEXITCODE -ne 0) { throw "Non-zero exit in e2e (exit=$LASTEXITCODE)" }
-        } else {
-          throw "Non-zero exit in e2e (exit=$code)"
-        }
-      }
+      $pwBin = Join-Path $PWD "node_modules\.bin\playwright.cmd"
+      if (-not (Test-Path $pwBin)) { throw "playwright binary not found. Run 'npm ci' in ui first." }
+      & $pwBin test --grep $E2EGrep --reporter=html,line
+      if ($LASTEXITCODE -ne 0) { throw "Non-zero exit in e2e (exit=$LASTEXITCODE)" }
+      if ($OpenReport) { & $pwBin show-report --port 0 --host 127.0.0.1 }
     } finally { Pop-Location }
   } else {
     Write-Host "[e2e] skipped (use -RunE2E to enable)" -ForegroundColor DarkYellow
   }
-  # ---------- API health (smoke) ----------
+
   Write-Host "`n== API health ==" -ForegroundColor Yellow
   Write-Host "API health ok."
 
   Write-Host "`nALL TESTS GREEN`n" -ForegroundColor Green
   Write-Host "QUALITY: ALL GREEN" -ForegroundColor Green
 } finally { Pop-Location }
-
